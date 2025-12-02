@@ -1,0 +1,39 @@
+{
+  "name": "rulekit",
+  "version": "0.1.0",
+  "description": "CLI tool to sync shared AGENTS.md rules and prompt files into target projects",
+  "type": "module",
+  "bin": {
+    "rulekit": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "start": "node dist/index.js"
+  },
+  "keywords": [
+    "cli",
+    "agents",
+    "cursor",
+    "vscode",
+    "prompts",
+    "rules"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "commander": "^12.1.0",
+    "fs-extra": "^11.2.0",
+    "glob": "^11.0.0",
+    "gray-matter": "^4.0.3"
+  },
+  "devDependencies": {
+    "@types/fs-extra": "^11.0.4",
+    "@types/node": "^22.10.1",
+    "typescript": "^5.7.2"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
+
