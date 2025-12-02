@@ -4,16 +4,20 @@ CLI tool to sync shared AGENTS.md rules and prompt files into target projects. G
 
 ## Quick Start
 
+Run directly from the repository without installing (requires SSH access to GitHub):
+
 ```bash
 # Sync rules and prompts to your project
-npx rulekit sync --stack vue --target ./my-project
+npx git+ssh://git@github.com/victorzellweger-osu/rulekit.git sync --stack vue --target ./my-project
 
 # Sync only rules
-npx rulekit sync --stack vue --rules-only
+npx git+ssh://git@github.com/victorzellweger-osu/rulekit.git sync --stack vue --rules-only
 
 # Sync only prompts
-npx rulekit sync --stack common --prompts-only
+npx git+ssh://git@github.com/victorzellweger-osu/rulekit.git sync --stack common --prompts-only
 ```
+
+**Note:** No need to add this as a dependency in your `package.json`. `npx` will download and run it temporarily.
 
 ## CLI Options
 
