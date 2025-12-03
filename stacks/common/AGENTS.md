@@ -1,7 +1,9 @@
 # Common Rules
 
 ## Code Style
-- Use functional patterns where possible
-- Prefer explicit over implicit
-- Write self-documenting code with clear naming
 
+- Write self-documenting code with clear naming
+- for js files:
+  - use full jsdoc comments
+  - create ts types (stored in src/types/ directory) for use in the jsdocs type annotations
+  - use the types in the jsdocs type annotations

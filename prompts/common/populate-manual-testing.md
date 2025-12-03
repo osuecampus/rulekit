@@ -13,4 +13,3 @@ Update the `docs/MANUAL_TESTING.md` file with a concise, non-technical test plan
 4. The test plan should be executable in 10-15 minutes maximum
 5. Write for non-technical testers - avoid code-level or technical steps
 6. Focus on user-facing functionality and workflows
-

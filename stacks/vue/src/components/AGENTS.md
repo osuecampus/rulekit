@@ -1,7 +1,4 @@
 # Vue Component Rules
 
-- Use `<script setup>` syntax
-- Use PascalCase for component file names
-- Colocate component styles with `<style scoped>`
 - Keep components focused on a single responsibility
-
+- Avoid prop-drilling, use global state management (vuex or pinia) from the parent component to provide props and event handlers to the child component
