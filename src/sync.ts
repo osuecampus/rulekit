@@ -5,37 +5,47 @@ import { generateCursorCommand } from './promptfile-generators/cursor.js';
 import { generateVSCodePrompt } from './promptfile-generators/vscode.js';
 
 /**
- * Sync AGENTS.md rules from common + stack directories to target project
+ * Sync rules from rules/ directory to target project as AGENTS.md files
+ *
+ * Directory structure:
+ *   rules/common.md           → AGENTS.md
+ *   rules/vue-bootstrap.md              → AGENTS.md (merged with common)
+ *   rules/docs/common.md      → docs/AGENTS.md
+ *   rules/src/components/vue.md → src/components/AGENTS.md
+ *
+ * Files are named by stack (common.md, vue.md, etc.)
+ * Directory path determines target location
  */
 export const syncRules = async (
   rulekitRoot: string,
   targetPath: string,
   stack: string
 ): Promise<void> => {
-  const commonDir = path.join(rulekitRoot, 'stacks', 'common');
-  const stackDir = path.join(rulekitRoot, 'stacks', stack);
+  const rulesDir = path.join(rulekitRoot, 'rules');
 
-  // Collect all AGENTS.md files from common
-  const commonFiles = await findAgentsMdFiles(commonDir);
+  // Find all .md files in rules directory, grouped by their target path
+  const rulesByPath = await findRuleFiles(rulesDir);
 
-  // Collect all AGENTS.md files from stack (if not 'common')
-  const stackFiles = stack !== 'common' ? await findAgentsMdFiles(stackDir) : new Map();
+  for (const [relativePath, stackFiles] of rulesByPath) {
+    // Get common content (applies to all stacks)
+    const commonContent = stackFiles.get('common') || '';
 
-  // Merge and get all unique relative paths
-  const allPaths = new Set([...commonFiles.keys(), ...stackFiles.keys()]);
+    // Get stack-specific content (if not syncing 'common' stack)
+    const stackContent = stack !== 'common' ? (stackFiles.get(stack) || '') : '';
 
-  for (const relativePath of allPaths) {
-    const commonContent = commonFiles.get(relativePath) || '';
-    const stackContent = stackFiles.get(relativePath) || '';
+    // Skip if no content for this stack at this path
+    if (!commonContent && !stackContent) continue;
 
     // Merge: common content first, then stack-specific content
     const mergedContent = mergeContent(commonContent, stackContent);
 
-    // Write to target
-    const targetFile = path.join(targetPath, relativePath);
+    // Write to target as AGENTS.md
+    const targetFile = path.join(targetPath, relativePath, 'AGENTS.md');
     await fs.ensureDir(path.dirname(targetFile));
     await fs.writeFile(targetFile, mergedContent, 'utf-8');
-    console.log(`  → ${relativePath}`);
+
+    const displayPath = relativePath ? `${relativePath}/AGENTS.md` : 'AGENTS.md';
+    console.log(`  → ${displayPath}`);
   }
 };
 
@@ -83,24 +93,39 @@ export const syncPrompts = async (
 };
 
 /**
- * Find all AGENTS.md files in a directory and return map of relative path -> content
+ * Find all rule files in rules/ directory and group by target path
+ * Returns: Map<targetPath, Map<stackName, content>>
+ *
+ * Example: rules/src/components/vue.md
+ *   → targetPath: "src/components"
+ *   → stackName: "vue"
  */
-const findAgentsMdFiles = async (dir: string): Promise<Map<string, string>> => {
-  const files = new Map<string, string>();
+const findRuleFiles = async (rulesDir: string): Promise<Map<string, Map<string, string>>> => {
+  const rulesByPath = new Map<string, Map<string, string>>();
 
-  if (!(await fs.pathExists(dir))) {
-    return files;
+  if (!(await fs.pathExists(rulesDir))) {
+    return rulesByPath;
   }
 
-  const matches = await glob('**/AGENTS.md', { cwd: dir });
+  const matches = await glob('**/*.md', { cwd: rulesDir });
 
   for (const match of matches) {
-    const fullPath = path.join(dir, match);
+    const fullPath = path.join(rulesDir, match);
     const content = await fs.readFile(fullPath, 'utf-8');
-    files.set(match, content);
+
+    // Extract target path (directory) and stack name (filename without .md)
+    const dirPath = path.dirname(match);
+    const targetPath = dirPath === '.' ? '' : dirPath;
+    const stackName = path.basename(match, '.md');
+
+    // Group by target path
+    if (!rulesByPath.has(targetPath)) {
+      rulesByPath.set(targetPath, new Map());
+    }
+    rulesByPath.get(targetPath)!.set(stackName, content);
   }
 
-  return files;
+  return rulesByPath;
 };
 
 /**
