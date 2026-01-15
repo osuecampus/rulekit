@@ -74,7 +74,7 @@ export default {
 
 ```javascript
 // Parent
-// use camelCase for prop names and event names, even if it is used in a template
+// use camelCase for prop names and event names, even if they are used in a template
 <ItemSelector :selectedItem="currentItem" @itemSelect="handleItemSelect" />
 
 // Child Props
