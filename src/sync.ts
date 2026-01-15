@@ -8,12 +8,12 @@ import { generateVSCodePrompt } from './promptfile-generators/vscode.js';
  * Sync rules from rules/ directory to target project as AGENTS.md files
  *
  * Directory structure:
- *   rules/common.md           → AGENTS.md
- *   rules/vue-bootstrap.md              → AGENTS.md (merged with common)
- *   rules/docs/common.md      → docs/AGENTS.md
- *   rules/src/components/vue.md → src/components/AGENTS.md
+ *   rules/common.md                      → AGENTS.md
+ *   rules/vue-bootstrap.md               → AGENTS.md (merged with common)
+ *   rules/docs/common.md                 → docs/AGENTS.md
+ *   rules/src/components/vue-bootstrap.md → src/components/AGENTS.md
  *
- * Files are named by stack (common.md, vue.md, etc.)
+ * Files are named by stack (common.md, vue-bootstrap.md, etc.)
  * Directory path determines target location
  */
 export const syncRules = async (
@@ -96,9 +96,9 @@ export const syncPrompts = async (
  * Find all rule files in rules/ directory and group by target path
  * Returns: Map<targetPath, Map<stackName, content>>
  *
- * Example: rules/src/components/vue.md
+ * Example: rules/src/components/vue-bootstrap.md
  *   → targetPath: "src/components"
- *   → stackName: "vue"
+ *   → stackName: "vue-bootstrap"
  */
 const findRuleFiles = async (rulesDir: string): Promise<Map<string, Map<string, string>>> => {
   const rulesByPath = new Map<string, Map<string, string>>();

@@ -8,10 +8,10 @@ Run directly from the repository without installing (requires SSH access to GitH
 
 ```bash
 # Sync rules and prompts to your project
-npx git+ssh://git@github.com/osuecampus/rulekit.git sync --stack vue --target ./my-project
+npx git+ssh://git@github.com/osuecampus/rulekit.git sync --stack vue-bootstrap --target ./my-project
 
 # Sync only rules
-npx git+ssh://git@github.com/osuecampus/rulekit.git sync --stack vue --rules-only
+npx git+ssh://git@github.com/osuecampus/rulekit.git sync --stack vue-bootstrap --rules-only
 
 # Sync only prompts
 npx git+ssh://git@github.com/osuecampus/rulekit.git sync --stack common --prompts-only
@@ -25,7 +25,7 @@ npx git+ssh://git@github.com/osuecampus/rulekit.git sync --stack common --prompt
 rulekit sync [options]
 
 Options:
-  -s, --stack <name>   Tech stack to use (vue, nuxt, common) [default: common]
+  -s, --stack <name>   Tech stack to use (vue-bootstrap, nuxt, common) [default: common]
   -t, --target <path>  Target project directory [default: current directory]
   --prompts-only       Only sync prompt files
   --rules-only         Only sync AGENTS.md files
@@ -40,9 +40,9 @@ Rules are synced directly to matching directory paths in your project:
 |--------|--------|
 | `stacks/common/AGENTS.md` | `AGENTS.md` |
 | `stacks/common/docs/AGENTS.md` | `docs/AGENTS.md` |
-| `stacks/vue/src/components/AGENTS.md` | `src/components/AGENTS.md` |
+| `stacks/vue-bootstrap/src/components/AGENTS.md` | `src/components/AGENTS.md` |
 
-When using a stack like `vue`, common rules are merged with stack-specific rules.
+When using a stack like `vue-bootstrap`, common rules are merged with stack-specific rules.
 
 ### Prompts
 Prompts are generated for both Cursor and VSCode:
@@ -112,7 +112,7 @@ yarn install
 yarn build
 
 # Run locally
-node dist/index.js sync --stack vue --target ./test-project
+node dist/index.js sync --stack vue-bootstrap --target ./test-project
 ```
 
 ## License
