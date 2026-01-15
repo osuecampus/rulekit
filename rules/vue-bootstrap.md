@@ -293,3 +293,60 @@ export default {
 - **Fetching Pattern**: `src/App.vue`
 - **API Helper**: `src/helpers/DatastoreAPI.js`
 - **Vuex Store**: `src/store/datastore.js` (state management only)
+
+## Naming Conventions
+
+- **Components**: PascalCase (`ActivityView.vue`, `CustomAlert.vue`)
+- **Props/Events**: camelCase (`itemData`, `itemSelect`)
+- **Store modules**: lowercase (`datastore.js`, `app.js`)
+- **CSS classes**: kebab-case (`item-details`, `layer-selector`)
+
+## Best Practices
+
+1. **Options API**: Prefer the Options API over the Composition API
+2. **Reactivity**: Use `data()` and `computed()` for reactive data
+3. **Props**: Always validate props with type and required constraints
+4. **Events**: Document all emitted events in component comments
+5. **Store**: Keep business logic in store actions, not components
+6. **Async**: Use async/await pattern for API calls
+7. **Responsive**: Design components to work on all screen sizes
+8. **Accessibility**: Prefer accessible semantic HTML, but use ARIA labels when necessary. Provide full keyboard navigation.
+
+## High-Level Lifecycle and Flow
+
+- Keep lifecycle hooks and top-level component logic high-level and uncluttered.
+- Lifecycle hooks should read like a table of contents: orchestrate calls to small, well-named functions.
+- Avoid large inline functions in components that impede understanding of control flow.
+- Extract low-level logic into helpers so readers can drill down only when needed.
+
+## Function Extraction and Helpers
+
+- Functions that do not depend on Vue (no `this`, no reactive state) must live in helper modules under `src/helpers/`.
+- Prefer small, single-responsibility helpers with clear names and inputs/outputs.
+- Components should wire data and call helpers; helpers should implement the mechanics.
+
+## JSDoc and Type Checking
+
+- Use JSDoc consistently.
+- In `.vue` files: add JSDoc for documentation/readability; no type-checking required.
+- In plain `.js` helper files: enable type-checking via `// @ts-check` at the top and JSDoc types.
+- Define shared types with `@typedef` in helpers or import from TS `src/types` when practical.
+
+Example (helper file):
+
+```js
+// @ts-check
+
+/**
+ * Process item data for display.
+ * @param {Array<Object>} items - Raw item records
+ * @returns {Object} Processed data structure
+ */
+export function processItems(items) {
+  return items.map(item => ({
+    id: item.id,
+    label: item.name,
+    value: item.value
+  }));
+}
+```
