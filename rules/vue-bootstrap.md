@@ -22,7 +22,8 @@ export default {
   props: {
     // Props with validation
   },
-  emits: ["event-name"],
+  // use camelCase for event names, even if it is used in a template
+  emits: ["eventName"],
   computed: {
     ...mapGetters(["getterProperty"])
   },
@@ -55,7 +56,7 @@ export default {
   props: {
     // Props with validation
   },
-  emits: ["event-name"],
+  emits: ["eventName"],
   computed: {
     // Use the array of strings approach to mapState, mapGetters, and mapActions
     ...mapState(["stateProperty"]),
@@ -73,7 +74,8 @@ export default {
 
 ```javascript
 // Parent
-<ItemSelector :selected-item="currentItem" @item-select="handleItemSelect" />
+// use camelCase for prop names and event names, even if they are used in a template
+<ItemSelector :selectedItem="currentItem" @itemSelect="handleItemSelect" />
 
 // Child Props
 props: {

@@ -17,7 +17,7 @@ program
 program
   .command('sync')
   .description('Sync rules and prompts to a target project')
-  .option('-s, --stack <name>', 'Tech stack to use (vue, nuxt, common)', 'common')
+  .option('-s, --stack <name>', 'Tech stack to use (vue-bootstrap, nuxt, common)', 'common')
   .option('-t, --target <path>', 'Target project directory', process.cwd())
   .option('--prompts-only', 'Only sync prompt files')
   .option('--rules-only', 'Only sync AGENTS.md files')
