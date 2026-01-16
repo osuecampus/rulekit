@@ -321,7 +321,7 @@ export default {
 
 ## Function Extraction and Helpers
 
-- Functions that do not depend on Vue (no `this`, no reactive state) must live in helper modules under `src/helpers/`.
+- Functions that do not depend on Vue (no `this`, no reactive state) should live in helper modules under `src/helpers/`.
 - Prefer small, single-responsibility helpers with clear names and inputs/outputs.
 - Components should wire data and call helpers; helpers should implement the mechanics.
 
