@@ -310,7 +310,7 @@ export default {
 5. **Store**: Keep business logic in store actions, not components
 6. **Async**: Use async/await pattern for API calls
 7. **Responsive**: Design components to work on all screen sizes
-8. **Accessibility**: Prefer accessible semantic HTML, but use ARIA labels when necessary. Provide full keyboard navigation.
+8. **Accessibility**: Prefer semantic HTML and native attributes; use ARIA attributes only when they are needed to convey meaning or structure that HTML alone cannot, as incorrect ARIA can harm accessibility. Provide full keyboard navigation.
 
 ## High-Level Lifecycle and Flow
 
