@@ -7,7 +7,10 @@ CLI tool to sync shared AGENTS.md rules, prompt files, and Agent Skills into tar
 Run directly from the repository without installing (requires SSH access to GitHub):
 
 ```bash
-# Sync rules, prompts, and skills to your project (auto-detects stack from .env)
+# First, sync skills to give your AI agent the rulekit commands
+npx git+ssh://git@github.com/osuecampus/rulekit.git sync --skills-only
+
+# Then sync everything (rules, prompts, and skills) to your project (auto-detects stack from .env)
 npx git+ssh://git@github.com/osuecampus/rulekit.git sync
 
 # Sync with an explicit stack
