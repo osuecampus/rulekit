@@ -431,15 +431,24 @@ describe('pushSkills', () => {
     expect(await fs.pathExists(path.join(cloneDir, 'skills', 'new-skill', 'references', 'ref.md'))).toBe(true);
   });
 
-  it('returns false when nothing changed', async () => {
+  it('copies non-SKILL.md files even when SKILL.md is unchanged', async () => {
     const localSkill = path.join(targetDir, '.claude', 'skills', 'my-skill');
-    await fs.ensureDir(localSkill);
+    await fs.ensureDir(path.join(localSkill, 'references'));
     await fs.writeFile(path.join(localSkill, 'SKILL.md'), '# Same Content\n');
+    await fs.writeFile(path.join(localSkill, 'references', 'guide.md'), '# New Guide\n');
 
     const cloneSkill = path.join(cloneDir, 'skills', 'my-skill');
     await fs.ensureDir(cloneSkill);
     await fs.writeFile(path.join(cloneSkill, 'SKILL.md'), '# Same Content\n');
 
+    const changed = await pushSkills(targetDir, cloneDir);
+
+    expect(changed).toBe(true);
+    const guide = await fs.readFile(path.join(cloneSkill, 'references', 'guide.md'), 'utf-8');
+    expect(guide).toBe('# New Guide\n');
+  });
+
+  it('returns false when no skills directory exists', async () => {
     expect(await pushSkills(targetDir, cloneDir)).toBe(false);
   });
 });

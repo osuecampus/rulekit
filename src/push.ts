@@ -80,8 +80,17 @@ export const pushChanges = async (options: PushOptions): Promise<void> => {
       return;
     }
 
-    // Commit and push
+    // Commit and push (use git to detect actual changes, since some
+    // push helpers optimistically copy and rely on git diff)
     execSync('git add -A', { cwd: tempDir, stdio: 'pipe' });
+    const staged = execSync('git diff --cached --quiet || echo changed', {
+      cwd: tempDir,
+      encoding: 'utf-8',
+    }).trim();
+    if (!staged) {
+      console.log('  → No changes detected');
+      return;
+    }
     const commitMsg = message || `push: update ${type} for ${stack} stack`;
     execSync(`git commit -m "${commitMsg}"`, { cwd: tempDir, stdio: 'pipe' });
     execSync(`git push -u origin ${branch}`, { cwd: tempDir, stdio: 'pipe' });
@@ -346,23 +355,13 @@ export const pushSkills = async (
     if (!(await fs.pathExists(localSkillMd))) continue;
 
     const sourceSkill = path.join(tempDir, 'skills', entry.name);
-    const sourceSkillMd = path.join(sourceSkill, 'SKILL.md');
 
-    if (await fs.pathExists(sourceSkillMd)) {
-      // Existing skill: only copy if SKILL.md content differs
-      const localContent = await fs.readFile(localSkillMd, 'utf-8');
-      const sourceContent = await fs.readFile(sourceSkillMd, 'utf-8');
-
-      if (localContent !== sourceContent) {
-        await fs.copy(localSkill, sourceSkill, { overwrite: true });
-        changed = true;
-      }
-    } else {
-      // New skill: create the target directory and copy
-      await fs.ensureDir(sourceSkill);
-      await fs.copy(localSkill, sourceSkill, { overwrite: true });
-      changed = true;
-    }
+    // Always copy the entire skill directory; git diff will determine
+    // whether anything actually changed (catches edits to references/,
+    // scripts/, assets/, etc. even when SKILL.md is untouched).
+    await fs.ensureDir(sourceSkill);
+    await fs.copy(localSkill, sourceSkill, { overwrite: true });
+    changed = true;
   }
 
   return changed;

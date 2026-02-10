@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { Command } from 'commander';
+import { Command, Option } from 'commander';
 import { syncRules, syncPrompts, syncSkills } from './sync.js';
 import { pushChanges } from './push.js';
 import { resolveStack } from './env.js';
@@ -65,7 +65,7 @@ program
   .description('Push local changes back to the rulekit repo via pull request')
   .option('-s, --stack <name>', 'Tech stack (auto-detects from .env if not specified)')
   .option('-t, --target <path>', 'Source project directory', process.cwd())
-  .option('--type <type>', 'What to push: rules, prompts, skills, all', 'all')
+  .addOption(new Option('--type <type>', 'What to push: rules, prompts, skills, all').choices(['rules', 'prompts', 'skills', 'all']).default('all'))
   .option('--prompt-stack <name>', 'Target stack directory for new prompts (defaults to common)')
   .option('-m, --message <msg>', 'PR description')
   .action(async (options) => {
