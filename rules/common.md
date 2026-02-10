@@ -1,4 +1,19 @@
+---
+stack: common
+---
+
 # Common Rules
+
+## About This File
+
+This AGENTS.md is synced by **rulekit** — do not add project-specific rules here.
+Project-specific rules belong in your editor's local config:
+
+- **Claude Code:** `CLAUDE.md`
+- **Cursor:** `.cursor/rules/*.md` or `.cursorrules`
+- **GitHub Copilot:** `.github/copilot-instructions.md`
+
+Your project-specific rules file should reference this AGENTS.md so agents observe both.
 
 ## Code Style
 

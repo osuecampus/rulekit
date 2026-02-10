@@ -1,3 +1,9 @@
+---
+stack: vue-bootstrap
+---
+
+<!-- This file is synced by rulekit. Project-specific rules go in CLAUDE.md, .cursorrules, or copilot-instructions.md -->
+
 # Vue.js Patterns and Conventions
 
 ## Component Structure

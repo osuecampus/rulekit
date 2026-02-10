@@ -1,8 +1,9 @@
 import fs from 'fs-extra';
 import path from 'path';
 import { glob } from 'glob';
-import { generateCursorCommand } from './promptfile-generators/cursor.js';
+import matter from 'gray-matter';
 import { generateVSCodePrompt } from './promptfile-generators/vscode.js';
+import { generateClaudeCodeCommand } from './promptfile-generators/claude-code.js';
 
 /**
  * Sync rules from rules/ directory to target project as AGENTS.md files
@@ -39,10 +40,13 @@ export const syncRules = async (
     // Merge: common content first, then stack-specific content
     const mergedContent = mergeContent(commonContent, stackContent);
 
+    // Wrap with frontmatter so stack can be inferred later
+    const output = matter.stringify('\n' + mergedContent, { stack });
+
     // Write to target as AGENTS.md
     const targetFile = path.join(targetPath, relativePath, 'AGENTS.md');
     await fs.ensureDir(path.dirname(targetFile));
-    await fs.writeFile(targetFile, mergedContent, 'utf-8');
+    await fs.writeFile(targetFile, output, 'utf-8');
 
     const displayPath = relativePath ? `${relativePath}/AGENTS.md` : 'AGENTS.md';
     console.log(`  → ${displayPath}`);
@@ -50,7 +54,8 @@ export const syncRules = async (
 };
 
 /**
- * Sync prompt files to target project in both Cursor and VSCode formats
+ * Sync prompt files to target project. Cursor reads from .claude/commands;
+ * VSCode uses .github/prompts. Claude Code uses .claude/commands.
  */
 export const syncPrompts = async (
   rulekitRoot: string,
@@ -78,17 +83,17 @@ export const syncPrompts = async (
     const baseName = path.basename(promptFile, '.md');
     const prefixedName = `rulekit-${baseName}`;
 
-    // Generate Cursor command file
-    const cursorPath = path.join(targetPath, '.cursor', 'commands', `${prefixedName}.md`);
-    await fs.ensureDir(path.dirname(cursorPath));
-    await fs.writeFile(cursorPath, generateCursorCommand(content), 'utf-8');
-    console.log(`  → .cursor/commands/${prefixedName}.md`);
-
     // Generate VSCode prompt file
     const vscodePath = path.join(targetPath, '.github', 'prompts', `${prefixedName}.prompt.md`);
     await fs.ensureDir(path.dirname(vscodePath));
     await fs.writeFile(vscodePath, generateVSCodePrompt(content, baseName), 'utf-8');
     console.log(`  → .github/prompts/${prefixedName}.prompt.md`);
+
+    // Generate Claude Code command file
+    const claudePath = path.join(targetPath, '.claude', 'commands', `${prefixedName}.md`);
+    await fs.ensureDir(path.dirname(claudePath));
+    await fs.writeFile(claudePath, generateClaudeCodeCommand(content, baseName), 'utf-8');
+    console.log(`  → .claude/commands/${prefixedName}.md`);
   }
 };
 
@@ -111,7 +116,14 @@ const findRuleFiles = async (rulesDir: string): Promise<Map<string, Map<string, 
 
   for (const match of matches) {
     const fullPath = path.join(rulesDir, match);
-    const content = await fs.readFile(fullPath, 'utf-8');
+    const raw = await fs.readFile(fullPath, 'utf-8');
+
+    // Strip frontmatter — only the body content goes into AGENTS.md
+    const parsed = matter(raw);
+    const hasFrontmatter = parsed.matter && parsed.matter.trim().length > 0;
+    const content = hasFrontmatter
+      ? parsed.content
+      : (parsed.content.trim() ? parsed.content : raw);
 
     // Extract target path (directory) and stack name (filename without .md)
     const dirPath = path.dirname(match);
@@ -126,6 +138,39 @@ const findRuleFiles = async (rulesDir: string): Promise<Map<string, Map<string, 
   }
 
   return rulesByPath;
+};
+
+/**
+ * Sync Agent Skills to target project.
+ * Copies entire skill directories (SKILL.md + scripts/ + references/ + assets/)
+ * to .claude/skills/<skill-name>/ in the consuming project.
+ */
+export const syncSkills = async (
+  rulekitRoot: string,
+  targetPath: string,
+  _stack: string
+): Promise<void> => {
+  const skillsDir = path.join(rulekitRoot, 'skills');
+
+  if (!(await fs.pathExists(skillsDir))) {
+    return;
+  }
+
+  const entries = await fs.readdir(skillsDir, { withFileTypes: true });
+
+  for (const entry of entries) {
+    if (!entry.isDirectory()) continue;
+
+    const skillSource = path.join(skillsDir, entry.name);
+    const skillMd = path.join(skillSource, 'SKILL.md');
+
+    // Only sync directories that contain a SKILL.md
+    if (!(await fs.pathExists(skillMd))) continue;
+
+    const targetSkillDir = path.join(targetPath, '.claude', 'skills', entry.name);
+    await fs.copy(skillSource, targetSkillDir, { overwrite: true });
+    console.log(`  → .claude/skills/${entry.name}/`);
+  }
 };
 
 /**

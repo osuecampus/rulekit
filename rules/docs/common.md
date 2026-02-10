@@ -1,3 +1,7 @@
+---
+stack: common
+---
+
 # Documentation Rules
 
 - Keep docs concise and actionable

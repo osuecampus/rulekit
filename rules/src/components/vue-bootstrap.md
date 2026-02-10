@@ -1,3 +1,7 @@
+---
+stack: vue-bootstrap
+---
+
 # Vue Component Rules
 
 - Keep components focused on a single responsibility
