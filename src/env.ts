@@ -50,12 +50,11 @@ const readStackFromEnv = async (targetPath: string): Promise<string | undefined>
 };
 
 /**
- * Read stack from the frontmatter of the target project's AGENTS.md.
- * When rulekit syncs rules, the stack-specific section is appended after common,
- * but we check if the merged file contains a non-common stack indicator.
- * We look at the last `---` separated section's content to infer the stack
- * by checking all rule files' frontmatter in the rulekit source. However,
- * the simpler approach: parse the AGENTS.md frontmatter directly if present.
+ * Read the stack from the frontmatter of the target project's AGENTS.md.
+ *
+ * syncRules writes the resolved stack into AGENTS.md frontmatter. This helper
+ * simply parses that frontmatter and, if a non-"common" string `stack` field
+ * is present, returns it to be used as the inferred stack.
  */
 const readStackFromAgentsMd = async (targetPath: string): Promise<string | undefined> => {
   const agentsPath = path.join(targetPath, 'AGENTS.md');
