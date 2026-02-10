@@ -120,7 +120,10 @@ const findRuleFiles = async (rulesDir: string): Promise<Map<string, Map<string, 
 
     // Strip frontmatter — only the body content goes into AGENTS.md
     const parsed = matter(raw);
-    const content = parsed.content.trim() ? parsed.content : raw;
+    const hasFrontmatter = parsed.matter && parsed.matter.trim().length > 0;
+    const content = hasFrontmatter
+      ? parsed.content
+      : (parsed.content.trim() ? parsed.content : raw);
 
     // Extract target path (directory) and stack name (filename without .md)
     const dirPath = path.dirname(match);
