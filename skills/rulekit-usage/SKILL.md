@@ -8,7 +8,9 @@ metadata:
 
 # Rulekit Usage
 
-Rulekit syncs shared coding rules (AGENTS.md), prompt/command files, and Agent Skills from a central repository into consuming projects.
+This skill is for projects that **consume** rulekit — you interact with it entirely through the `npx` CLI, never by cloning the rulekit repo directly.
+
+Rulekit syncs shared coding rules (AGENTS.md), prompt/command files, and Agent Skills from a central repository into your project.
 
 ## Commands
 
@@ -73,6 +75,18 @@ Shared rules live in `AGENTS.md` (synced by rulekit). Project-specific rules go 
 | GitHub Copilot | `.github/copilot-instructions.md` |
 
 Your project-specific rules file should mention AGENTS.md so agents observe both shared and local rules.
+
+## Adding a New Stack
+
+If your project uses a tech stack that doesn't exist in rulekit yet, you can contribute one:
+
+1. **Set your stack** — add `RULEKIT_STACK=<new-stack-name>` to your project's `.env`.
+2. **Sync common rules** — run `rulekit sync` to pull the common base into your `AGENTS.md`.
+3. **Write stack-specific rules** — edit `AGENTS.md` and add your stack's conventions after the `---` separator (common rules are above it, stack rules below).
+4. **Push rules** — run `rulekit push --type rules --stack <new-stack-name>` to create a PR that adds the new stack to rulekit.
+5. **Add stack prompts** (optional) — create `rulekit-*.md` prompt files locally, then push with `rulekit push --type prompts --prompt-stack <new-stack-name>`.
+
+Once the PR is merged, any project can use the new stack by setting `RULEKIT_STACK=<new-stack-name>` in `.env` and running `rulekit sync`.
 
 ## Conflict Resolution
 
