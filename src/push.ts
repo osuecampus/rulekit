@@ -291,9 +291,9 @@ export const pushPrompts = async (
   if (localPrompts.size === 0) return false;
 
   let changed = false;
+  const promptDirs = await glob('prompts/*', { cwd: tempDir });
 
   for (const [name, canonicalContent] of localPrompts) {
-    const promptDirs = await glob('prompts/*', { cwd: tempDir });
     let found = false;
 
     for (const promptDir of promptDirs) {
