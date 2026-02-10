@@ -14,7 +14,6 @@ rulekit/
 │   ├── env.ts                            # .env-based stack detection
 │   ├── push.ts                           # Push local changes back via PR
 │   └── promptfile-generators/
-│       ├── cursor.ts                     # Cursor command file generator
 │       ├── vscode.ts                     # VSCode .prompt.md generator
 │       └── claude-code.ts                # Claude Code command generator
 ├── rules/                                # Rule templates, organized by directory path
@@ -81,9 +80,8 @@ Rule files live in `rules/` and are named by stack. Directory path determines ta
 ### Prompt Files
 
 Prompts in `prompts/` are transformed into editor-specific formats:
-- Cursor: `.cursor/commands/rulekit-<name>.md`
 - VSCode: `.github/prompts/rulekit-<name>.prompt.md`
-- Claude Code: `.claude/commands/rulekit-<name>.md`
+- Claude Code: `.claude/commands/rulekit-<name>.md` (Cursor also reads from this directory)
 
 ### Agent Skills
 

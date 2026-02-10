@@ -186,9 +186,42 @@ const pushSubdirRules = async (
   }
 };
 
+/** Client-injected frontmatter fields to strip when writing to prompts/ source */
+const CLIENT_ONLY_FIELDS = ['name', 'agent'] as const;
+
 /**
- * Collect rulekit-* prompt files from all three client command locations.
- * Returns a map of prompt name → { content, mtime } using deduplication.
+ * Convert client prompt content to canonical prompts/ format.
+ * Preserves all frontmatter except client-injected fields (name, agent).
+ */
+const toCanonicalPromptFormat = (raw: string): string => {
+  const parsed = matter(raw);
+  const content = parsed.content.trim();
+
+  const canonical: Record<string, string> = {};
+  for (const [key, val] of Object.entries(parsed.data)) {
+    if (CLIENT_ONLY_FIELDS.includes(key as (typeof CLIENT_ONLY_FIELDS)[number])) continue;
+    if (val != null && String(val).trim()) {
+      canonical[key] = String(val).trim();
+    }
+  }
+
+  if (Object.keys(canonical).length > 0) {
+    return matter.stringify(content, canonical);
+  }
+  return content;
+};
+
+/**
+ * Normalize existing prompts/ file to canonical format for comparison.
+ * Strips any non-canonical frontmatter so we compare apples to apples.
+ */
+const normalizePromptFile = (raw: string): string => {
+  return toCanonicalPromptFormat(raw);
+};
+
+/**
+ * Collect rulekit-* prompt files from .claude/commands and .github/prompts.
+ * Returns prompt name → full canonical content (with frontmatter preserved).
  * When the same prompt exists in multiple locations with different content,
  * warns and uses the most recently modified file.
  */
@@ -197,12 +230,17 @@ export const collectLocalPrompts = async (
 ): Promise<Map<string, string>> => {
   const locations = [
     { dir: path.join(targetPath, '.claude', 'commands'), pattern: 'rulekit-*.md', stripExt: '.md' },
-    { dir: path.join(targetPath, '.cursor', 'commands'), pattern: 'rulekit-*.md', stripExt: '.md' },
-    { dir: path.join(targetPath, '.github', 'prompts'), pattern: 'rulekit-*.prompt.md', stripExt: '.prompt.md' },
+    {
+      dir: path.join(targetPath, '.github', 'prompts'),
+      pattern: 'rulekit-*.prompt.md',
+      stripExt: '.prompt.md',
+    },
   ];
 
-  // Collect all candidates: name → [{ content, mtime, filePath }]
-  const candidates = new Map<string, { content: string; mtime: number; filePath: string }[]>();
+  const candidates = new Map<
+    string,
+    { canonical: string; content: string; mtime: number; filePath: string }[]
+  >();
 
   for (const loc of locations) {
     if (!(await fs.pathExists(loc.dir))) continue;
@@ -212,28 +250,28 @@ export const collectLocalPrompts = async (
       const name = file.replace('rulekit-', '').replace(loc.stripExt, '');
       const filePath = path.join(loc.dir, file);
       const raw = await fs.readFile(filePath, 'utf-8');
-      const parsed = matter(raw);
-      const content = parsed.content.trim();
+      const canonical = toCanonicalPromptFormat(raw);
+      const content = matter(canonical).content.trim();
       const stat = await fs.stat(filePath);
 
       if (!candidates.has(name)) candidates.set(name, []);
-      candidates.get(name)!.push({ content, mtime: stat.mtimeMs, filePath });
+      candidates.get(name)!.push({ canonical, content, mtime: stat.mtimeMs, filePath });
     }
   }
 
-  // Deduplicate: pick content for each prompt name
   const result = new Map<string, string>();
   for (const [name, entries] of candidates) {
     const uniqueContents = new Set(entries.map((e) => e.content));
     if (uniqueContents.size === 1) {
-      result.set(name, entries[0].content);
+      // Same body everywhere — prefer the one with the most frontmatter (Claude)
+      const withFm = entries.find((e) => e.canonical.includes('---'));
+      result.set(name, withFm ? withFm.canonical : entries[0].canonical);
     } else {
-      // Conflict: warn and pick most recently modified
       const sorted = entries.sort((a, b) => b.mtime - a.mtime);
       console.warn(
         `  ⚠ Prompt "${name}" differs across client locations. Using most recent: ${sorted[0].filePath}`
       );
-      result.set(name, sorted[0].content);
+      result.set(name, sorted[0].canonical);
     }
   }
 
@@ -241,7 +279,8 @@ export const collectLocalPrompts = async (
 };
 
 /**
- * Push prompt changes: compare rulekit-* prompts from all client locations against prompts/ sources.
+ * Push prompt changes: compare rulekit-* prompts from .claude/commands and .github/prompts.
+ * Preserves all frontmatter except client-injected fields (name, agent).
  */
 export const pushPrompts = async (
   targetPath: string,
@@ -253,8 +292,7 @@ export const pushPrompts = async (
 
   let changed = false;
 
-  for (const [name, sourceContent] of localPrompts) {
-    // Try to find existing prompt in any prompts/* directory in the clone
+  for (const [name, canonicalContent] of localPrompts) {
     const promptDirs = await glob('prompts/*', { cwd: tempDir });
     let found = false;
 
@@ -263,20 +301,21 @@ export const pushPrompts = async (
       if (await fs.pathExists(sourceFile)) {
         found = true;
         const existing = await fs.readFile(sourceFile, 'utf-8');
-        const existingParsed = matter(existing);
-        if (sourceContent !== existingParsed.content.trim()) {
-          await fs.writeFile(sourceFile, sourceContent + '\n', 'utf-8');
+        const existingNormalized = normalizePromptFile(existing);
+        if (canonicalContent !== existingNormalized) {
+          const output = canonicalContent.endsWith('\n') ? canonicalContent : canonicalContent + '\n';
+          await fs.writeFile(sourceFile, output, 'utf-8');
           changed = true;
         }
       }
     }
 
-    // New prompt: create in the appropriate stack directory
     if (!found) {
       const targetStack = promptStack || 'common';
       const newFile = path.join(tempDir, 'prompts', targetStack, `${name}.md`);
       await fs.ensureDir(path.dirname(newFile));
-      await fs.writeFile(newFile, sourceContent + '\n', 'utf-8');
+      const output = canonicalContent.endsWith('\n') ? canonicalContent : canonicalContent + '\n';
+      await fs.writeFile(newFile, output, 'utf-8');
       changed = true;
     }
   }

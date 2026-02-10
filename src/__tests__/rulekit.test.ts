@@ -94,7 +94,7 @@ describe('syncRules', () => {
 });
 
 describe('syncPrompts', () => {
-  it('generates all 3 editor formats with correct structure', async () => {
+  it('generates VSCode and Claude Code formats with correct structure', async () => {
     await fs.ensureDir(path.join(rulekitRoot, 'prompts', 'common'));
     await fs.writeFile(
       path.join(rulekitRoot, 'prompts', 'common', 'review.md'),
@@ -102,11 +102,6 @@ describe('syncPrompts', () => {
     );
 
     await syncPrompts(rulekitRoot, targetDir, 'common');
-
-    // Cursor — rulekit- prefix applied
-    expect(await fs.pathExists(
-      path.join(targetDir, '.cursor', 'commands', 'rulekit-review.md')
-    )).toBe(true);
 
     // VSCode — proper frontmatter
     const vscode = await fs.readFile(
@@ -136,10 +131,10 @@ describe('syncPrompts', () => {
     await syncPrompts(rulekitRoot, targetDir, 'vue-bootstrap');
 
     expect(await fs.pathExists(
-      path.join(targetDir, '.cursor', 'commands', 'rulekit-shared.md')
+      path.join(targetDir, '.claude', 'commands', 'rulekit-shared.md')
     )).toBe(true);
     expect(await fs.pathExists(
-      path.join(targetDir, '.cursor', 'commands', 'rulekit-vue-specific.md')
+      path.join(targetDir, '.claude', 'commands', 'rulekit-vue-specific.md')
     )).toBe(true);
   });
 
@@ -147,7 +142,7 @@ describe('syncPrompts', () => {
     await fs.ensureDir(rulekitRoot);
     await syncPrompts(rulekitRoot, targetDir, 'common');
 
-    expect(await fs.pathExists(path.join(targetDir, '.cursor'))).toBe(false);
+    expect(await fs.pathExists(path.join(targetDir, '.claude', 'commands'))).toBe(false);
   });
 });
 
@@ -281,18 +276,17 @@ describe('pushPrompts', () => {
     expect(await pushPrompts(targetDir, cloneDir)).toBe(false);
   });
 
-  it('reads from all 3 client locations', async () => {
-    // Only .cursor/commands exists
-    const cursorDir = path.join(targetDir, '.cursor', 'commands');
-    await fs.ensureDir(cursorDir);
-    await fs.writeFile(path.join(cursorDir, 'rulekit-cursor-prompt.md'), '# Cursor Prompt\n\nFrom cursor.\n');
+  it('reads from .github/prompts when .claude not present', async () => {
+    const promptsDir = path.join(targetDir, '.github', 'prompts');
+    await fs.ensureDir(promptsDir);
+    await fs.writeFile(path.join(promptsDir, 'rulekit-copilot-prompt.prompt.md'), '# Copilot Prompt\n\nFrom copilot.\n');
 
     await fs.ensureDir(path.join(cloneDir, 'prompts', 'common'));
 
     const changed = await pushPrompts(targetDir, cloneDir);
 
     expect(changed).toBe(true);
-    expect(await fs.pathExists(path.join(cloneDir, 'prompts', 'common', 'cursor-prompt.md'))).toBe(true);
+    expect(await fs.pathExists(path.join(cloneDir, 'prompts', 'common', 'copilot-prompt.md'))).toBe(true);
   });
 
   it('uses most recently modified when prompts conflict across locations', async () => {
@@ -302,11 +296,11 @@ describe('pushPrompts', () => {
     const claudeFile = path.join(claudeDir, 'rulekit-shared.md');
     await fs.writeFile(claudeFile, '# Shared\n\nOld version.\n');
 
-    // Newer .cursor version
-    const cursorDir = path.join(targetDir, '.cursor', 'commands');
-    await fs.ensureDir(cursorDir);
-    const cursorFile = path.join(cursorDir, 'rulekit-shared.md');
-    await fs.writeFile(cursorFile, '# Shared\n\nNewer version.\n');
+    // Newer .github version
+    const githubDir = path.join(targetDir, '.github', 'prompts');
+    await fs.ensureDir(githubDir);
+    const githubFile = path.join(githubDir, 'rulekit-shared.prompt.md');
+    await fs.writeFile(githubFile, '# Shared\n\nNewer version.\n');
 
     const past = new Date(Date.now() - 60000);
     await fs.utimes(claudeFile, past, past);
@@ -317,6 +311,91 @@ describe('pushPrompts', () => {
 
     const result = await fs.readFile(path.join(cloneDir, 'prompts', 'common', 'shared.md'), 'utf-8');
     expect(result).toContain('Newer version.');
+  });
+
+  it('preserves canonical frontmatter when updating existing prompt', async () => {
+    const claudeDir = path.join(targetDir, '.claude', 'commands');
+    await fs.ensureDir(claudeDir);
+    await fs.writeFile(
+      path.join(claudeDir, 'rulekit-deploy.md'),
+      '---\nallowed-tools: Read, Write, Bash\nmodel: sonnet\n---\n# Deploy\n\nUpdated deploy instructions.\n'
+    );
+
+    const promptDir = path.join(cloneDir, 'prompts', 'common');
+    await fs.ensureDir(promptDir);
+    await fs.writeFile(
+      path.join(promptDir, 'deploy.md'),
+      '---\nallowed-tools: Read, Write\nmodel: sonnet\n---\n# Deploy\n\nOld deploy instructions.\n'
+    );
+
+    const changed = await pushPrompts(targetDir, cloneDir);
+
+    expect(changed).toBe(true);
+    const result = await fs.readFile(path.join(promptDir, 'deploy.md'), 'utf-8');
+    const parsed = matter(result);
+    expect(parsed.data['allowed-tools']).toBe('Read, Write, Bash');
+    expect(parsed.data.model).toBe('sonnet');
+    expect(parsed.content.trim()).toContain('Updated deploy instructions.');
+  });
+
+  it('preserves canonical frontmatter when creating new prompt', async () => {
+    const claudeDir = path.join(targetDir, '.claude', 'commands');
+    await fs.ensureDir(claudeDir);
+    await fs.writeFile(
+      path.join(claudeDir, 'rulekit-new-feature.md'),
+      '---\nallowed-tools: Read, Write\nargument-hint: feature-name\n---\n# New Feature\n\nCreate a new feature.\n'
+    );
+
+    await fs.ensureDir(path.join(cloneDir, 'prompts', 'common'));
+
+    const changed = await pushPrompts(targetDir, cloneDir);
+
+    expect(changed).toBe(true);
+    const result = await fs.readFile(path.join(cloneDir, 'prompts', 'common', 'new-feature.md'), 'utf-8');
+    const parsed = matter(result);
+    expect(parsed.data['allowed-tools']).toBe('Read, Write');
+    expect(parsed.data['argument-hint']).toBe('feature-name');
+    expect(parsed.content.trim()).toContain('Create a new feature.');
+  });
+
+  it('returns false when content and frontmatter match', async () => {
+    const claudeDir = path.join(targetDir, '.claude', 'commands');
+    await fs.ensureDir(claudeDir);
+    await fs.writeFile(
+      path.join(claudeDir, 'rulekit-deploy.md'),
+      '---\nallowed-tools: Read\nmodel: sonnet\n---\n# Deploy\n\nSame instructions.\n'
+    );
+
+    const promptDir = path.join(cloneDir, 'prompts', 'common');
+    await fs.ensureDir(promptDir);
+    await fs.writeFile(
+      path.join(promptDir, 'deploy.md'),
+      '---\nallowed-tools: Read\nmodel: sonnet\n---\n# Deploy\n\nSame instructions.\n'
+    );
+
+    expect(await pushPrompts(targetDir, cloneDir)).toBe(false);
+  });
+
+  it('preserves custom frontmatter and strips client-injected fields', async () => {
+    const claudeDir = path.join(targetDir, '.claude', 'commands');
+    await fs.ensureDir(claudeDir);
+    await fs.writeFile(
+      path.join(claudeDir, 'rulekit-custom.md'),
+      '---\npriority: high\ntags: testing\nallowed-tools: Read\n---\n# Custom\n\nWith custom metadata.\n'
+    );
+
+    await fs.ensureDir(path.join(cloneDir, 'prompts', 'common'));
+
+    const changed = await pushPrompts(targetDir, cloneDir);
+
+    expect(changed).toBe(true);
+    const result = await fs.readFile(path.join(cloneDir, 'prompts', 'common', 'custom.md'), 'utf-8');
+    const parsed = matter(result);
+    expect(parsed.data.priority).toBe('high');
+    expect(parsed.data.tags).toBe('testing');
+    expect(parsed.data['allowed-tools']).toBe('Read');
+    expect(parsed.data.name).toBeUndefined();
+    expect(parsed.data.agent).toBeUndefined();
   });
 });
 

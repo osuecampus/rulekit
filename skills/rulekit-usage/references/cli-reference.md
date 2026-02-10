@@ -34,9 +34,8 @@ rulekit sync [options]
 |------|--------|--------|
 | Rules | `rules/<stack>.md` | `AGENTS.md` (merged with common) |
 | Rules | `rules/<dir>/<stack>.md` | `<dir>/AGENTS.md` |
-| Prompts (Cursor) | `prompts/<stack>/*.md` | `.cursor/commands/rulekit-<name>.md` |
 | Prompts (VSCode) | `prompts/<stack>/*.md` | `.github/prompts/rulekit-<name>.prompt.md` |
-| Prompts (Claude Code) | `prompts/<stack>/*.md` | `.claude/commands/rulekit-<name>.md` |
+| Prompts (Claude Code / Cursor) | `prompts/<stack>/*.md` | `.claude/commands/rulekit-<name>.md` |
 | Skills | `skills/<name>/` | `.claude/skills/<name>/` |
 
 **Examples:**
@@ -64,7 +63,6 @@ Stack: vue-bootstrap (auto-detected from .env)
   → docs/AGENTS.md
   → src/components/AGENTS.md
 ✓ Rules synced
-  → .cursor/commands/rulekit-populate-manual-testing.md
   → .github/prompts/rulekit-populate-manual-testing.prompt.md
   → .claude/commands/rulekit-populate-manual-testing.md
 ✓ Prompts synced

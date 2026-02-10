@@ -2,7 +2,6 @@ import fs from 'fs-extra';
 import path from 'path';
 import { glob } from 'glob';
 import matter from 'gray-matter';
-import { generateCursorCommand } from './promptfile-generators/cursor.js';
 import { generateVSCodePrompt } from './promptfile-generators/vscode.js';
 import { generateClaudeCodeCommand } from './promptfile-generators/claude-code.js';
 
@@ -55,7 +54,8 @@ export const syncRules = async (
 };
 
 /**
- * Sync prompt files to target project in both Cursor and VSCode formats
+ * Sync prompt files to target project. Cursor reads from .claude/commands;
+ * VSCode uses .github/prompts. Claude Code uses .claude/commands.
  */
 export const syncPrompts = async (
   rulekitRoot: string,
@@ -82,12 +82,6 @@ export const syncPrompts = async (
     const content = await fs.readFile(promptFile, 'utf-8');
     const baseName = path.basename(promptFile, '.md');
     const prefixedName = `rulekit-${baseName}`;
-
-    // Generate Cursor command file
-    const cursorPath = path.join(targetPath, '.cursor', 'commands', `${prefixedName}.md`);
-    await fs.ensureDir(path.dirname(cursorPath));
-    await fs.writeFile(cursorPath, generateCursorCommand(content), 'utf-8');
-    console.log(`  → .cursor/commands/${prefixedName}.md`);
 
     // Generate VSCode prompt file
     const vscodePath = path.join(targetPath, '.github', 'prompts', `${prefixedName}.prompt.md`);

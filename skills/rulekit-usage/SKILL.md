@@ -46,7 +46,7 @@ npx git+ssh://git@github.com/osuecampus/rulekit.git push --type rules -m "Update
 npx git+ssh://git@github.com/osuecampus/rulekit.git push --type prompts --prompt-stack vue-bootstrap
 ```
 
-Push reads `rulekit-*` prompt files from all client locations (`.claude/commands/`, `.cursor/commands/`, `.github/prompts/`) and deduplicates by name. New prompts and skills that don't yet exist in rulekit are included in the PR.
+Push reads `rulekit-*` prompt files from `.claude/commands/` and `.github/prompts/` and deduplicates by name. All frontmatter is preserved except client-injected fields (`name`, `agent`). New prompts and skills that don't yet exist in rulekit are included in the PR.
 
 ## Workflow
 

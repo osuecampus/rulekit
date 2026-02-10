@@ -1,6 +1,6 @@
 # rulekit
 
-CLI tool to sync shared AGENTS.md rules, prompt files, and Agent Skills into target projects. Generates editor-specific formats for Cursor, VSCode, and Claude Code.
+CLI tool to sync shared AGENTS.md rules, prompt files, and Agent Skills into target projects. Generates editor-specific command formats for VSCode and Claude Code. Cursor reads from `.claude/commands/`.
 
 ## Quick Start
 
@@ -77,11 +77,11 @@ When using a stack like `vue-bootstrap`, common rules are merged with stack-spec
 
 ### Prompts
 
-Prompts are generated for Cursor, VSCode, and Claude Code:
+Prompts are generated for VSCode and Claude Code. Cursor reads from `.claude/commands/`:
 
-| Source | Cursor | VSCode | Claude Code |
-|--------|--------|--------|-------------|
-| `prompts/common/populate-manual-testing.md` | `.cursor/commands/rulekit-populate-manual-testing.md` | `.github/prompts/rulekit-populate-manual-testing.prompt.md` | `.claude/commands/rulekit-populate-manual-testing.md` |
+| Source | VSCode | Claude Code (and Cursor) |
+|--------|--------|--------------------------|
+| `prompts/common/populate-manual-testing.md` | `.github/prompts/rulekit-populate-manual-testing.prompt.md` | `.claude/commands/rulekit-populate-manual-testing.md` |
 
 Synced prompts use a `rulekit-` prefix to avoid conflicts with your local prompts.
 
@@ -135,9 +135,9 @@ Rules are merged in layers:
 
 | Feature | Cursor | VSCode | Claude Code |
 |---------|--------|--------|-------------|
-| Command files | `.cursor/commands/*.md` | `.github/prompts/*.prompt.md` | `.claude/commands/*.md` |
+| Command files | `.claude/commands/*.md` (shared) | `.github/prompts/*.prompt.md` | `.claude/commands/*.md` |
 | Extension | `.md` | `.prompt.md` | `.md` |
-| Frontmatter | None required | YAML with `name`, `description`, `agent` | Optional YAML with `description`, `allowed-tools`, `model` |
+| Frontmatter | Uses Claude format | YAML with `name`, `description`, `agent` | Optional YAML with `description`, `allowed-tools`, `model` |
 
 ## Development
 
