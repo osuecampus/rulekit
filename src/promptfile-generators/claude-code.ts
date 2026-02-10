@@ -4,15 +4,20 @@ import matter from 'gray-matter';
  * Generate a Claude Code command file from prompt content.
  * Claude Code commands are .md files in .claude/commands/ with optional YAML frontmatter.
  * Supported frontmatter fields: allowed-tools, argument-hint, description, model
+ * @param content - The prompt content (with optional frontmatter)
+ * @param name - Name used as fallback description if no frontmatter description or heading exists
  */
 export const generateClaudeCodeCommand = (content: string, name: string): string => {
   const parsed = matter(content);
 
   // Extract description from first heading if not in frontmatter
+  // Fall back to name if neither frontmatter nor heading provides a description
   let description: string | undefined;
   const lines = parsed.content.trim().split('\n');
   if (lines[0]?.startsWith('# ')) {
     description = lines[0].replace('# ', '').trim();
+  } else if (!parsed.data.description) {
+    description = name;
   }
 
   // Build Claude Code frontmatter — only include meaningful fields

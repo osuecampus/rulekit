@@ -464,10 +464,11 @@ describe('generators', () => {
     expect(parsed.data.model).toBe('sonnet');
   });
 
-  it('Claude Code omits frontmatter when no metadata', () => {
+  it('Claude Code uses name as fallback description when no metadata', () => {
     const result = generateClaudeCodeCommand('Just plain instructions.', 'plain');
 
-    expect(result).not.toMatch(/^---/);
+    expect(result).toMatch(/^---/);
+    expect(result).toContain('description: plain');
     expect(result).toContain('Just plain instructions.');
   });
 });
