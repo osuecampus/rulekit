@@ -91,6 +91,7 @@ rulekit push [options]
 | `-s, --stack <name>` | Tech stack | Auto-detect from `.env` |
 | `-t, --target <path>` | Source project directory | Current working directory |
 | `--type <type>` | What to push: `rules`, `prompts`, `skills`, `all` | `all` |
+| `--prompt-stack <name>` | Target stack directory for new prompts | `common` |
 | `-m, --message <msg>` | PR description | |
 
 **Examples:**
@@ -107,6 +108,9 @@ rulekit push --type rules -m "Updated Vue component best practices"
 
 # Push from a specific directory
 rulekit push --target ./my-project --stack vue-bootstrap
+
+# Push new prompts to a specific stack directory (instead of common)
+rulekit push --type prompts --prompt-stack vue-bootstrap
 ```
 
 **Expected output:**
