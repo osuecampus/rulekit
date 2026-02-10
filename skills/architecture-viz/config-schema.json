@@ -1,0 +1,344 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://architecture-viz/config-schema.json",
+  "title": "Architecture Diagram Configuration",
+  "description": "Optional configuration to customize architecture diagram generation for projects with non-standard structure.",
+  "type": "object",
+  "properties": {
+    "framework": {
+      "type": "string",
+      "enum": [
+        "vue",
+        "vue2",
+        "vue3",
+        "react",
+        "angular",
+        "svelte",
+        "next",
+        "nuxt"
+      ],
+      "description": "Primary framework used in the project. Auto-detected if not specified.",
+      "examples": ["vue3", "react", "angular"]
+    },
+    "version": {
+      "type": "string",
+      "description": "Framework version if detection needs clarification.",
+      "examples": ["3.2.0", "18.2.0"]
+    },
+    "componentOrganization": {
+      "type": "string",
+      "enum": ["by-type", "by-feature", "atomic", "custom"],
+      "default": "by-type",
+      "description": "How components are organized in the project.",
+      "examples": ["by-type"]
+    },
+    "componentPaths": {
+      "type": "object",
+      "description": "Custom glob patterns for locating different component types.",
+      "additionalProperties": {
+        "type": "string",
+        "description": "Glob pattern for this component type"
+      },
+      "examples": [
+        {
+          "core": "src/components/core/**/*.vue",
+          "ui": "src/components/ui/**/*.vue",
+          "features": "src/components/pac/**/*.vue",
+          "views": "src/views/**/*.vue"
+        }
+      ]
+    },
+    "entryPoints": {
+      "type": "array",
+      "description": "Custom entry point file paths if non-standard.",
+      "items": {
+        "type": "string"
+      },
+      "examples": [["src/main.js", "src/index.ts"]]
+    },
+    "stateManagement": {
+      "type": "string",
+      "enum": ["vuex", "pinia", "redux", "mobx", "zustand", "context", "none"],
+      "description": "State management library used. Auto-detected if not specified.",
+      "examples": ["vuex"]
+    },
+    "storePaths": {
+      "type": "object",
+      "description": "Custom paths for state management files.",
+      "properties": {
+        "root": {
+          "type": "string",
+          "description": "Root store file path",
+          "examples": ["src/store/index.js"]
+        },
+        "modules": {
+          "type": "string",
+          "description": "Glob pattern for store modules",
+          "examples": ["src/store/*.js"]
+        }
+      }
+    },
+    "routerPath": {
+      "type": "string",
+      "description": "Custom path to router configuration.",
+      "examples": ["src/router/index.js", "src/routes.ts"]
+    },
+    "apiPaths": {
+      "type": "array",
+      "description": "Custom paths to API/service layer files.",
+      "items": {
+        "type": "string"
+      },
+      "examples": [["src/apis/*.js", "src/services/**/*.ts"]]
+    },
+    "moduleBoundaries": {
+      "type": "array",
+      "description": "Define explicit module boundaries and subsystems.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Display name for the module"
+          },
+          "path": {
+            "type": "string",
+            "description": "File path or glob pattern for module"
+          },
+          "description": {
+            "type": "string",
+            "description": "Purpose of this module"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["feature", "core", "shared", "admin"],
+            "description": "Type of module for styling purposes"
+          }
+        },
+        "required": ["name", "path"]
+      },
+      "examples": [
+        [
+          {
+            "name": "Admin Subsystem",
+            "path": "src/admin/",
+            "description": "Role-based admin interface",
+            "type": "admin"
+          },
+          {
+            "name": "PAC Components",
+            "path": "src/components/pac/",
+            "description": "Physical Activity Course features",
+            "type": "feature"
+          }
+        ]
+      ]
+    },
+    "namingPatterns": {
+      "type": "object",
+      "description": "Custom naming patterns to recognize component types.",
+      "properties": {
+        "singleton": {
+          "type": "string",
+          "description": "Pattern for singleton components (e.g., 'The*')",
+          "examples": ["The*"]
+        },
+        "view": {
+          "type": "string",
+          "description": "Pattern for view/page components",
+          "examples": ["*View", "*Page"]
+        },
+        "container": {
+          "type": "string",
+          "description": "Pattern for container/smart components",
+          "examples": ["*Container"]
+        },
+        "ui": {
+          "type": "string",
+          "description": "Pattern for UI/presentational components",
+          "examples": ["*"]
+        }
+      }
+    },
+    "excludePatterns": {
+      "type": "array",
+      "description": "Glob patterns to exclude from analysis.",
+      "items": {
+        "type": "string"
+      },
+      "examples": [["**/*.test.js", "**/*.spec.js", "**/node_modules/**"]]
+    },
+    "features": {
+      "type": "object",
+      "description": "Feature flags and their significance.",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean",
+            "description": "Whether feature is enabled"
+          },
+          "description": {
+            "type": "string",
+            "description": "What this feature controls"
+          },
+          "envVar": {
+            "type": "string",
+            "description": "Environment variable that controls this feature"
+          }
+        }
+      },
+      "examples": [
+        {
+          "authentication": {
+            "enabled": true,
+            "description": "JWT authentication system",
+            "envVar": "VUE_APP_DO_AUTH"
+          },
+          "adminPanel": {
+            "enabled": true,
+            "description": "Admin interface for content management",
+            "envVar": "VUE_APP_CONTENT_API_KEY"
+          }
+        }
+      ]
+    },
+    "externalServices": {
+      "type": "array",
+      "description": "External services and APIs the app integrates with.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Service name"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["rest", "graphql", "websocket", "grpc", "other"],
+            "description": "Service type"
+          },
+          "baseUrl": {
+            "type": "string",
+            "description": "Base URL if applicable"
+          },
+          "description": {
+            "type": "string",
+            "description": "Purpose of this service"
+          },
+          "authentication": {
+            "type": "string",
+            "enum": ["jwt", "oauth", "api-key", "none"],
+            "description": "Authentication method"
+          }
+        },
+        "required": ["name", "type"]
+      },
+      "examples": [
+        [
+          {
+            "name": "Datastore API",
+            "type": "rest",
+            "baseUrl": "https://api.oregonstate.education/datastore",
+            "description": "Persistence layer for user data",
+            "authentication": "jwt"
+          },
+          {
+            "name": "Content API",
+            "type": "rest",
+            "baseUrl": "https://api.oregonstate.education/content",
+            "description": "CMS for application content",
+            "authentication": "api-key"
+          }
+        ]
+      ]
+    },
+    "customLabels": {
+      "type": "object",
+      "description": "Custom labels for files or modules to improve diagram clarity.",
+      "additionalProperties": {
+        "type": "string"
+      },
+      "examples": [
+        {
+          "src/components/pac/": "Physical Activity Course Features",
+          "src/admin/": "Admin Subsystem"
+        }
+      ]
+    },
+    "diagramPreferences": {
+      "type": "object",
+      "description": "Preferences for diagram generation.",
+      "properties": {
+        "defaultDirection": {
+          "type": "string",
+          "enum": ["TD", "LR", "BT", "RL"],
+          "default": "TD",
+          "description": "Default graph direction (Top-Down, Left-Right, etc.)"
+        },
+        "maxNodesPerDiagram": {
+          "type": "integer",
+          "default": 15,
+          "minimum": 5,
+          "maximum": 50,
+          "description": "Maximum nodes to show in a single diagram"
+        },
+        "showDetailByDefault": {
+          "type": "boolean",
+          "default": false,
+          "description": "Whether to show detailed diagrams by default"
+        },
+        "colorScheme": {
+          "type": "string",
+          "enum": ["default", "minimal", "colorblind-safe"],
+          "default": "default",
+          "description": "Color scheme for diagrams"
+        }
+      }
+    },
+    "notes": {
+      "type": "string",
+      "description": "Free-form notes about the architecture that should inform diagram generation."
+    }
+  },
+  "additionalProperties": false,
+  "examples": [
+    {
+      "framework": "vue3",
+      "componentOrganization": "by-type",
+      "componentPaths": {
+        "core": "src/components/core/**/*.vue",
+        "ui": "src/components/ui/**/*.vue",
+        "features": "src/components/pac/**/*.vue"
+      },
+      "stateManagement": "vuex",
+      "moduleBoundaries": [
+        {
+          "name": "Admin Subsystem",
+          "path": "src/admin/",
+          "description": "Role-based admin interface with dedicated routes and components",
+          "type": "admin"
+        }
+      ],
+      "namingPatterns": {
+        "singleton": "The*",
+        "view": "*View"
+      },
+      "features": {
+        "authentication": {
+          "enabled": true,
+          "description": "JWT authentication with role-based access",
+          "envVar": "VUE_APP_DO_AUTH"
+        }
+      },
+      "externalServices": [
+        {
+          "name": "Datastore API",
+          "type": "rest",
+          "description": "User data persistence",
+          "authentication": "jwt"
+        }
+      ]
+    }
+  ]
+}
