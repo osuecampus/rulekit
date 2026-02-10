@@ -120,10 +120,13 @@ export const pushRules = async (
   const agentsFile = path.join(targetPath, 'AGENTS.md');
   if (!(await fs.pathExists(agentsFile))) return false;
 
-  const agentsContent = await fs.readFile(agentsFile, 'utf-8');
+  const agentsRaw = await fs.readFile(agentsFile, 'utf-8');
 
-  // Split on --- separator to extract stack portion
-  const sections = agentsContent.split(/\n---\n/);
+  // Strip YAML frontmatter before splitting on the merge separator
+  const agentsContent = matter(agentsRaw).content;
+
+  // Split on the same separator that mergeContent uses (\n\n---\n\n)
+  const sections = agentsContent.split(/\n\n---\n\n/);
 
   // For common stack, use the first section; for others, use the last section
   let ruleContent: string;
@@ -144,17 +147,20 @@ export const pushRules = async (
     existingContent = parsed.content.trim();
   }
 
-  if (ruleContent === existingContent) return false;
+  let rootChanged = false;
 
-  // Write back with frontmatter preserved
-  const frontmatter = { stack };
-  const output = matter.stringify('\n' + ruleContent + '\n', frontmatter);
-  await fs.writeFile(ruleFile, output, 'utf-8');
+  if (ruleContent !== existingContent) {
+    // Write back with frontmatter preserved
+    const frontmatter = { stack };
+    const output = matter.stringify('\n' + ruleContent + '\n', frontmatter);
+    await fs.writeFile(ruleFile, output, 'utf-8');
+    rootChanged = true;
+  }
 
   // Also check subdirectory rules
-  await pushSubdirRules(targetPath, tempDir, stack);
+  const subdirChanged = await pushSubdirRules(targetPath, tempDir, stack);
 
-  return true;
+  return rootChanged || subdirChanged;
 };
 
 /**
@@ -164,19 +170,24 @@ const pushSubdirRules = async (
   targetPath: string,
   tempDir: string,
   stack: string
-): Promise<void> => {
+): Promise<boolean> => {
   const agentsFiles = await glob('**/AGENTS.md', {
     cwd: targetPath,
     ignore: ['node_modules/**', TEMP_DIR + '/**'],
   });
 
+  let changed = false;
+
   for (const relPath of agentsFiles) {
     if (relPath === 'AGENTS.md') continue; // Already handled by pushRules
 
     const dirPath = path.dirname(relPath);
-    const content = await fs.readFile(path.join(targetPath, relPath), 'utf-8');
+    const raw = await fs.readFile(path.join(targetPath, relPath), 'utf-8');
 
-    const sections = content.split(/\n---\n/);
+    // Strip YAML frontmatter before splitting on the merge separator
+    const content = matter(raw).content;
+
+    const sections = content.split(/\n\n---\n\n/);
     let ruleContent: string;
     if (stack === 'common') {
       ruleContent = sections[0].trim();
@@ -192,7 +203,10 @@ const pushSubdirRules = async (
     const frontmatter = { stack };
     const output = matter.stringify('\n' + ruleContent + '\n', frontmatter);
     await fs.writeFile(ruleFile, output, 'utf-8');
+    changed = true;
   }
+
+  return changed;
 };
 
 /** Client-injected frontmatter fields to strip when writing to prompts/ source */
@@ -206,11 +220,18 @@ const toCanonicalPromptFormat = (raw: string): string => {
   const parsed = matter(raw);
   const content = parsed.content.trim();
 
-  const canonical: Record<string, string> = {};
+  const canonical: Record<string, unknown> = {};
   for (const [key, val] of Object.entries(parsed.data)) {
     if (CLIENT_ONLY_FIELDS.includes(key as (typeof CLIENT_ONLY_FIELDS)[number])) continue;
-    if (val != null && String(val).trim()) {
-      canonical[key] = String(val).trim();
+    if (val == null) continue;
+
+    if (typeof val === 'string') {
+      const trimmed = val.trim();
+      if (trimmed) {
+        canonical[key] = trimmed;
+      }
+    } else {
+      canonical[key] = val;
     }
   }
 
