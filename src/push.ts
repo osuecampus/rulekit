@@ -192,7 +192,8 @@ const pushSubdirRules = async (
     if (stack === 'common') {
       ruleContent = sections[0].trim();
     } else {
-      ruleContent = sections.length > 1 ? sections[sections.length - 1].trim() : '';
+      ruleContent =
+        sections.length > 1 ? sections[sections.length - 1].trim() : sections[0].trim();
     }
 
     if (!ruleContent) continue;
