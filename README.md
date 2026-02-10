@@ -58,6 +58,7 @@ Options:
   -t, --target <path>  Source project directory [default: current directory]
   --type <type>        What to push: rules, prompts, skills, all [default: all]
   -m, --message <msg>  PR description
+  --prompt-stack <name> Target stack directory for new prompts [default: common] (this default only applies to prompts)
 ```
 
 ## What Gets Synced
